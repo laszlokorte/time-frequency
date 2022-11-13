@@ -1,109 +1,21 @@
-*Psst  looking for a more complete solution? Check out [SvelteKit](https://kit.svelte.dev), the official framework for building web applications of all sizes, with a beautiful development experience and flexible filesystem-based routing.*
+![Screenshot of the app](preview.png)
 
-*Looking for a shareable component template instead? Go here --> [sveltejs/component-template](https://github.com/sveltejs/component-template)*
+[Live Demo](https://static.laszlokorte.de/time-frequency/)
 
----
+# Time Frequency Trade-off
 
-# svelte app
+Above you can a signal a filter. Both are complex values and represented along the time in both cartesian (real and imaginary part are white curve and gray curve) and polar coordinates (square brightness represents the magnitude, color represents the phase)
 
-This is a project template for [Svelte](https://svelte.dev) apps. It lives at https://github.com/sveltejs/template.
+You can configure the size and shape of the filter and shift it across the signal. Depending on size of the filter and the shift length the filter can be placed at a number of positions along the signal. At each possible position the dot product between the filter values and the signal values at that position can be calculated as a measure of how well the filter fits the signal or rather how similar the filter shape is to the the signal.
 
-To create a new project based on this template using [degit](https://github.com/Rich-Harris/degit):
+Also depending on length of the filter the filter can represent a number of frequencies. A long filter consists of a higher number of values that can be used to form a higher number of sinusoids.
 
-```bash
-npx degit sveltejs/template svelte-app
-cd svelte-app
-```
+All possible combinations filter positions and filter frequencies are shown in the time frequency grid. As you can see the length of the filter influences the number of positions and the number of frequencies. The total number of bins in the grid is limited.
 
-*Note that you will need to have [Node.js](https://nodejs.org) installed.*
+A short filter can only detect high frequencies because low frequencies (long period lengths) do not fit inside the filter. A wide filter can detect both high and low frequencies because it can represent both high and low frequencies. But the computation cost is increased because more numbers need to be multiplied or it has to be shifted across the signal in larger steps which decreases the temporal resolution.
 
+So applying a filter is a trade-off between number of frequencies to match, number of time positions and computational complexity. The classic DFT uses a single filter size that matches length of the signal and a list of a all frequencies that fit into the fitler. The short time fourier transform (STFT) uses a shorter filter of fixed size and fixed shift length to slide across the signal to then compute all resulting time/frequency bins. So the STFT decreases the number of frequncy bins in order to increase the number of time bins compared to the DFT. The wavelet transform slides filters of different lenths across the signal but uses only a single fixed filter frequency per filter size. Typically for each filter size only the lowest (none zero) frequency is used because higher frequencies are detected by the shorter filters anyway.
 
-## Get started
+In that way the wavelet transform targets the optimal trade-off between time and frequency resolutions. Check the audo option for the filter frequency and the auto and max options for the shift length and then play with the filter length option to see which frequency bins the wavelet transform calculates.
 
-Install the dependencies...
-
-```bash
-cd svelte-app
-npm install
-```
-
-...then start [Rollup](https://rollupjs.org):
-
-```bash
-npm run dev
-```
-
-Navigate to [localhost:5000](http://localhost:5000). You should see your app running. Edit a component file in `src`, save it, and reload the page to see your changes.
-
-By default, the server will only respond to requests from localhost. To allow connections from other computers, edit the `sirv` commands in package.json to include the option `--host 0.0.0.0`.
-
-If you're using [Visual Studio Code](https://code.visualstudio.com/) we recommend installing the official extension [Svelte for VS Code](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode). If you are using other editors you may need to install a plugin in order to get syntax highlighting and intellisense.
-
-## Building and running in production mode
-
-To create an optimised version of the app:
-
-```bash
-npm run build
-```
-
-You can run the newly built app with `npm run start`. This uses [sirv](https://github.com/lukeed/sirv), which is included in your package.json's `dependencies` so that the app will work when you deploy to platforms like [Heroku](https://heroku.com).
-
-
-## Single-page app mode
-
-By default, sirv will only respond to requests that match files in `public`. This is to maximise compatibility with static fileservers, allowing you to deploy your app anywhere.
-
-If you're building a single-page app (SPA) with multiple routes, sirv needs to be able to respond to requests for *any* path. You can make it so by editing the `"start"` command in package.json:
-
-```js
-"start": "sirv public --single"
-```
-
-## Using TypeScript
-
-This template comes with a script to set up a TypeScript development environment, you can run it immediately after cloning the template with:
-
-```bash
-node scripts/setupTypeScript.js
-```
-
-Or remove the script via:
-
-```bash
-rm scripts/setupTypeScript.js
-```
-
-If you want to use `baseUrl` or `path` aliases within your `tsconfig`, you need to set up `@rollup/plugin-alias` to tell Rollup to resolve the aliases. For more info, see [this StackOverflow question](https://stackoverflow.com/questions/63427935/setup-tsconfig-path-in-svelte).
-
-## Deploying to the web
-
-### With [Vercel](https://vercel.com)
-
-Install `vercel` if you haven't already:
-
-```bash
-npm install -g vercel
-```
-
-Then, from within your project folder:
-
-```bash
-cd public
-vercel deploy --name my-project
-```
-
-### With [surge](https://surge.sh/)
-
-Install `surge` if you haven't already:
-
-```bash
-npm install -g surge
-```
-
-Then, from within your project folder:
-
-```bash
-npm run build
-surge public my-project.surge.sh
-```
+One additional perspective to consider is the following: The original signal consists only of N=64 samples. So whatever the filter does it can not extract more information from the signal than it already contains. So any more than 64 result bins hint at a waste of computation and redundancy. When maximizing the shift length the time/frequency grid consists of 64 bins for any chosen window size. When - as in the wavelet transform - you take only a single filter frequency per filter size you can see how the selected bins in the grid do not overlap and they approach to cover the whole time frequency plain.
