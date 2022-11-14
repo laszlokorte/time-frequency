@@ -44,7 +44,7 @@
 			filterFrequency*i/(windowLength)*2*Math.PI))
 
 	$: allSteps = Array(filterStepMax+1).fill(null).map((_,i) => i)
-	$: allFrequencies = Array(maxFilterFrequency+1).fill(null).map((_,i) => i)
+	$: allFrequencies = Array(maxFilterFrequency+1).fill(null).map((_,i) => i > maxFilterFrequency/2 ? i-(maxFilterFrequency+(maxFilterFrequency&1))/2 : i+(maxFilterFrequency+(maxFilterFrequency&1))/2)
 	
 	let dragging = false
 	
@@ -67,7 +67,6 @@
 		dragging = false
 	}
 </script>
-
 <style>
 	.cpair{
 		display: flex;
@@ -144,8 +143,6 @@
 		color: #fff;
 		background: #bbb;
 		border: none;
-		width: 10px;
-		height: 10px;
 		font-size: 10px;
 		display: block;
 		cursor: pointer;
@@ -277,6 +274,20 @@
 	.cb-label {
 		padding: 0.3em;
 	}
+
+	.tf-grid {
+		display: grid;
+		grid-auto-columns: 1fr;
+		grid-auto-flow: row;
+		aspect-ratio: 1;
+		align-items: stretch;
+		justify-items: stretch;
+		gap: 1px;
+	}
+
+	.tf-grid > [data-t="0"] {
+		grid-column: 1;
+	}
 </style>
 
 <svelte:window on:mouseup|capture={evtDragEnd} />
@@ -284,7 +295,6 @@
 <h1>
 	Time Frequency Trade-off
 </h1>
-
 
 <div class="container">
 	<div style:align-self="stretch" style:flex-grow="1">
@@ -389,7 +399,8 @@
 	Time/Frequency Grid
 </h2>
 
-<table cellspacing="0" cellpadding="0">
+
+<table cellspacing="0" cellpadding="0" width="100%">
 	<tr>
 	<th width="10">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
 	<th align="left">0</th>
@@ -399,31 +410,30 @@
 
 	</tr>
 	<tr>
-		<td valign="top" align="center">0</td>
+		<td valign="top" align="center">{-signalLength/2+1}</td>
 		<td colspan="3" rowspan="3" valign="center" align="center">
-			<table cellspacing="1" cellpadding="0">
-	{#each allFrequencies as f, fi}
-	<tr>
-		{#each allSteps as t}
-		<td><button style:width="{(7*((signalLength-omittedCount)/allSteps.length)-1)}px" style:height="{Math.floor(7*(signalLength/allFrequencies.length)-1)}px" on:mouseup|capture={evtDragEnd} disabled={f!=filterFrequency&&autoFrequency} class:active={f==filterFrequency && t==filterStep} data-freq={f} data-step={t} on:mousedown={evtSetFilter} on:mouseenter={evtDragFilter}></button></td>
-		{/each}
-		
-		{#if omittedCount}
-		<td><button disabled="disabled" style:width="{Math.floor(7*omittedCount-1)}px" style:height="{Math.floor(7*(signalLength/allFrequencies.length)-1)}px"></button></td>
-		{/if}
-	</tr>
-	{/each}
-</table>	
+						
+			<div class="tf-grid">
+				{#each allFrequencies as f, fi}
+					{#each allSteps as t}
+					<button data-t={t} style:grid-column={t+1} on:mouseup|capture={evtDragEnd} disabled={f!=filterFrequency&&autoFrequency} class:active={f==filterFrequency && t==filterStep} data-freq={f} data-step={t} on:mousedown={evtSetFilter} on:mouseenter={evtDragFilter}></button>
+					{/each}
+					
+					{#if omittedCount}
+					<button style:grid-column={allSteps.length+1} disabled="disabled"></button>
+					{/if}
+				{/each}
+			</div>
 		</td>
-		<td valign="top" align="center">0</td>
+		<td valign="top" align="center">{-signalLength/2+1}</td>
 	</tr>
 	<tr>
 		<th class="rottext" width="10">Freq.</th>
 		<th class="rottext" width="10">Freq.</th>
 	</tr>
 	<tr>
-		<td valign="bottom" align="center">{signalLength}</td>
-		<td valign="bottom" align="center">{signalLength}</td>
+		<td valign="bottom" align="center">{signalLength/2}</td>
+		<td valign="bottom" align="center">{signalLength/2}</td>
 	</tr>
 	<tr>
 	<th width="10">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
