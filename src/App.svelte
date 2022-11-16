@@ -16,10 +16,11 @@
 	
 	let filterShape = 'rect'
 
-	let oddLength = false
-	$: oddLength = (windowLengthExp==0 || windowLengthExp == signalLengthExp) ? false : oddLength
+	let wantOddLength = false
+	$: canOddLength = true || !(windowLengthExp==0 || windowLengthExp == signalLengthExp)
+	$: oddLength = wantOddLength && canOddLength
 	let windowLengthExp = 3
-	$: windowLengthExp = Math.min(windowLengthExp, signalLengthExp)
+	$: windowLengthExp = Math.max(autoFrequency?2:0, Math.min(windowLengthExp, signalLengthExp - (wantOddLength?1:0)))
 	$: windowLength = Math.pow(2, windowLengthExp) + (oddLength?1:0)
 
 	let autoShiftSize = false
@@ -35,8 +36,8 @@
 	
 	let autoFrequency = false
 	let filterFrequency = 0
-	$: maxFilterFrequency = Math.pow(2, windowLengthExp)-1
-	$: filterFrequency = autoFrequency ? Math.min(windowLength-1, 1) : Math.min(filterFrequency, maxFilterFrequency)
+	$: maxFilterFrequency = Math.pow(2, windowLengthExp)-1+(oddLength?1:0)
+	$: filterFrequency = autoFrequency ? 2 : Math.min(filterFrequency, maxFilterFrequency)
 	$: filterWindow = Array(windowLength).fill(null).map(
 		(_,i) => cMake(
 			filterShape == 'rect' ? 1 :
@@ -44,7 +45,7 @@
 			filterFrequency*i/(windowLength)*2*Math.PI))
 
 	$: allSteps = Array(filterStepMax+1).fill(null).map((_,i) => i)
-	$: allFrequencies = Array(maxFilterFrequency+1).fill(null).map((_,i) => i > maxFilterFrequency/2 ? i-(maxFilterFrequency+(maxFilterFrequency&1))/2 : i+(maxFilterFrequency+(maxFilterFrequency&1))/2)
+	$: allFrequencies = Array(maxFilterFrequency+1).fill(null).map((_,i) => i-1 <= maxFilterFrequency/2 ? -i+(maxFilterFrequency+(maxFilterFrequency&1))/2 : 1+maxFilterFrequency-i+(maxFilterFrequency+(maxFilterFrequency&1))/2)
 	
 	let dragging = false
 	
@@ -161,9 +162,13 @@
 		font-weight: normal;
 	}
 	
+	button.active-secondary {
+		background: #999;
+	}
 	button.active {
 		background: orange;
 	}
+
 	
 	button:disabled {
 		opacity: 0.5;
@@ -354,7 +359,7 @@
 		<dt>Signal Length 2^{signalLengthExp}</dt>
 		<dd><input type="range" min="0" max="6" bind:value={signalLengthExp}></dd>
 		<dt>Filter Length 2^{windowLengthExp} {#if oddLength}+1{/if}<br>
-		<label><input type="checkbox" bind:checked={oddLength}/> odd</label></dt>
+		<label><input class:hidden={!canOddLength} disabled={!canOddLength} type="checkbox" bind:checked={wantOddLength}/> odd</label></dt>
 		<dd><input type="range" min="0" max="6" bind:value={windowLengthExp}></dd>
 		<dt>Filter shift length: {windowShiftSize} / {Math.pow(2, signalLengthExp)}<br>
 			 <label><input type="checkbox" bind:checked={autoShiftSize}/> auto</label>
@@ -400,6 +405,7 @@
 </h2>
 
 
+
 <table cellspacing="0" cellpadding="0" width="100%">
 	<tr>
 	<th width="10">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
@@ -410,13 +416,13 @@
 
 	</tr>
 	<tr>
-		<td valign="top" align="center">{-signalLength/2+1}</td>
+		<td valign="top" align="center">{signalLength/2}</td>
 		<td colspan="3" rowspan="3" valign="center" align="center">
 						
 			<div class="tf-grid">
 				{#each allFrequencies as f, fi}
 					{#each allSteps as t}
-					<button data-t={t} style:grid-column={t+1} on:mouseup|capture={evtDragEnd} disabled={f!=filterFrequency&&autoFrequency} class:active={f==filterFrequency && t==filterStep} data-freq={f} data-step={t} on:mousedown={evtSetFilter} on:mouseenter={evtDragFilter}></button>
+					<button data-t={t} style:grid-column={t+1} on:mouseup|capture={evtDragEnd} disabled={f!=filterFrequency&&(-f+windowLength)%windowLength!=filterFrequency && autoFrequency} class:active={f==filterFrequency && t==filterStep} class:active-secondary={(-f+windowLength)%windowLength==filterFrequency && t==filterStep} data-freq={f} data-step={t} on:mousedown={evtSetFilter} on:mouseenter={evtDragFilter}></button>
 					{/each}
 					
 					{#if omittedCount}
@@ -425,15 +431,15 @@
 				{/each}
 			</div>
 		</td>
-		<td valign="top" align="center">{-signalLength/2+1}</td>
+		<td valign="top" align="center">{signalLength/2}</td>
 	</tr>
 	<tr>
 		<th class="rottext" width="10">Freq.</th>
 		<th class="rottext" width="10">Freq.</th>
 	</tr>
 	<tr>
-		<td valign="bottom" align="center">{signalLength/2}</td>
-		<td valign="bottom" align="center">{signalLength/2}</td>
+		<td valign="bottom" align="center">{-signalLength/2+(oddLength?1:0)}</td>
+		<td valign="bottom" align="center">{-signalLength/2+(oddLength?1:0)}</td>
 	</tr>
 	<tr>
 	<th width="10">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
