@@ -45,7 +45,7 @@
 			filterFrequency*i/(windowLength)*2*Math.PI))
 
 	$: allSteps = Array(filterStepMax+1).fill(null).map((_,i) => i)
-	$: allFrequencies = Array(maxFilterFrequency+1).fill(null).map((_,i) => i-1 <= maxFilterFrequency/2 ? -i+(maxFilterFrequency+(maxFilterFrequency&1))/2 : 1+maxFilterFrequency-i+(maxFilterFrequency+(maxFilterFrequency&1))/2)
+	$: allFrequencies = Array(maxFilterFrequency+1+(!oddLength?1:0)).fill(null).map((_,i) => i-1 <= maxFilterFrequency/2 ? -i+(maxFilterFrequency+(maxFilterFrequency&1))/2 : 1+maxFilterFrequency-i+(maxFilterFrequency+(maxFilterFrequency&1))/2)
 	
 	let dragging = false
 	
@@ -290,6 +290,14 @@
 		gap: 1px;
 	}
 
+	.tf-grid {
+		grid-template-rows: repeat(var(--odd-row-count), 1fr);
+	}
+
+	.tf-grid.even {
+		grid-template-rows: 0.5fr repeat(var(--odd-row-count), 1fr) 0.5fr;
+	}
+
 	.tf-grid > [data-t="0"] {
 		grid-column: 1;
 	}
@@ -419,7 +427,7 @@
 		<td valign="top" align="center">{signalLength/2}</td>
 		<td colspan="3" rowspan="3" valign="center" align="center">
 						
-			<div class="tf-grid">
+			<div class="tf-grid" class:even={!oddLength} style:--odd-row-count={allFrequencies.length - (oddLength?0:2)}>
 				{#each allFrequencies as f, fi}
 					{#each allSteps as t}
 					<button data-t={t} style:grid-column={t+1} on:mouseup|capture={evtDragEnd} disabled={f!=filterFrequency&&(-f+windowLength)%windowLength!=filterFrequency && autoFrequency} class:active={f==filterFrequency && t==filterStep} class:active-secondary={(-f+windowLength)%windowLength==filterFrequency && t==filterStep} data-freq={f} data-step={t} on:mousedown={evtSetFilter} on:mouseenter={evtDragFilter}></button>
@@ -438,8 +446,8 @@
 		<th class="rottext" width="10">Freq.</th>
 	</tr>
 	<tr>
-		<td valign="bottom" align="center">{-signalLength/2+(oddLength?1:0)}</td>
-		<td valign="bottom" align="center">{-signalLength/2+(oddLength?1:0)}</td>
+		<td valign="bottom" align="center">{-signalLength/2+(oddLength?0:1)}</td>
+		<td valign="bottom" align="center">{-signalLength/2+(oddLength?0:1)}</td>
 	</tr>
 	<tr>
 	<th width="10">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
