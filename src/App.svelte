@@ -66,7 +66,7 @@
 			(filterFrequency>maxFilterFrequency/2?filterFrequency-maxFilterFrequency-1:filterFrequency)*(i)/(windowLength)*2*Math.PI))
 
 	$: allSteps = Array(filterStepMax+1).fill(null).map((_,i) => i)
-	$: allFrequencies = Array(maxFilterFrequency+(maxFilterFrequency?1:0)+(!oddLength?1:0)).fill(null).map((_,i) => i-1 <= maxFilterFrequency/2 ? -i+(maxFilterFrequency+(maxFilterFrequency&1))/2 : 1+maxFilterFrequency-i+(maxFilterFrequency+(maxFilterFrequency&1))/2)
+	$: allFrequencies = Array(maxFilterFrequency+(maxFilterFrequency?1:0)+(!oddLength?1:0)).fill(null).map((_,i,all) => i-(!oddLength?1:0) <= maxFilterFrequency/2 ? (all.length%2-1)-i+(maxFilterFrequency+(maxFilterFrequency&1))/2 : (all.length%2)+maxFilterFrequency-i+(maxFilterFrequency+(maxFilterFrequency&1))/2)
 
 	$: dotProducts = allSteps.map((s) => allFrequencies.map((f) => {
 		return filterWindow.map((_,o) => cMul(
