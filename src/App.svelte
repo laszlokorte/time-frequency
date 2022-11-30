@@ -42,7 +42,7 @@
 		(_,i) => cMake(
 			filterShape == 'rect' ? 1 :
 			Math.exp(-Math.pow(((i+0.5)/(windowLength+1)-(0.5))*4, 2)), 
-			filterFrequency*i/(windowLength)*2*Math.PI))
+			(filterFrequency>maxFilterFrequency/2?filterFrequency-maxFilterFrequency-1:filterFrequency)*(i)/(windowLength)*2*Math.PI))
 
 	$: allSteps = Array(filterStepMax+1).fill(null).map((_,i) => i)
 	$: allFrequencies = Array(maxFilterFrequency+(maxFilterFrequency?1:0)+(!oddLength?1:0)).fill(null).map((_,i) => i-1 <= maxFilterFrequency/2 ? -i+(maxFilterFrequency+(maxFilterFrequency&1))/2 : 1+maxFilterFrequency-i+(maxFilterFrequency+(maxFilterFrequency&1))/2)
@@ -85,7 +85,7 @@
 	}
 	
 	.cpair::after {
-		background-color: hsl(calc(255* var(--c-phase)), 100%, 50%);
+		background-color: hsl(calc(360 * var(--c-phase)), 100%, 50%);
 		border-radius: 8px;
 		width: 4px;
 		height: 4px;
