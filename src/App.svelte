@@ -24,12 +24,18 @@
 		return z.mag
 	}
 
+	function cPhase(z) {
+		return z.phase
+	}
+
 	var seed = 1;
 	function random() {
 			var x = Math.sin(seed++) * 10000;
 			return x - Math.floor(x);
 	}
 	
+	let gridStyle = "mag"
+
 	let signalLengthExp = 6
 	$: signalLength = Math.pow(2, signalLengthExp)
 	$: signal = Array(signalLength).fill(null).map((_,i) => cMake(random(), Math.sin(i/37*2*Math.PI)*2*Math.PI))
@@ -179,7 +185,13 @@
 		display: block;
 		cursor: pointer;
 		border-radius: 1px;
+	}
+
+	.showmag {
 		background-color: hsl(0, 50%, calc(var(--cmag) * 50%));
+	}
+	.showphase {
+		background-color: hsl(calc(360 * var(--cphase)), 60%, 50%);
 	}
 	
 	label {
@@ -337,6 +349,13 @@
 	.tf-grid > [data-t="0"] {
 		grid-column: 1;
 	}
+
+	.text-page {
+		background: #fafafa;
+		color: #000;
+		padding: 1.5em 2em;
+		box-sizing: border-box;
+	}
 </style>
 
 <svelte:window on:mouseup|capture={evtDragEnd} />
@@ -432,12 +451,6 @@
 	</dl>
 </fieldset>
 
-<div>
-	<h2>Explanation</h2>
-	<p style="margin-bottom: 2em;">
-		Above you can a signal a filter. Both are complex values and represented along the time in both cartesian (real and imaginary part are white curve and gray curve) and polar coordinates (square brightness represents the magnitude, color represents the phase)
-	</p>
-</div>
 
 </div>
 
@@ -466,7 +479,7 @@
 			<div class="tf-grid" class:even={!oddLength} style:--odd-row-count={allFrequencies.length - (oddLength?0:2)}>
 				{#each allFrequencies as f, fi}
 					{#each allSteps as t, ti}
-					<button data-t={t} style:grid-column={t+1} on:mouseup|capture={evtDragEnd} disabled={f!=filterFrequency&&(-f+windowLength)%windowLength!=filterFrequency && autoFrequency} class:active={f==filterFrequency && t==filterStep} class:active-secondary={(-f+windowLength)%windowLength==filterFrequency && t==filterStep} data-freq={f} data-step={t} on:mousedown={evtSetFilter} on:mouseenter={evtDragFilter} style:--cmag={cMag(dotProducts[ti][fi])}></button>
+					<button data-t={t} style:grid-column={t+1} on:mouseup|capture={evtDragEnd} disabled={f!=filterFrequency&&(-f+windowLength)%windowLength!=filterFrequency && autoFrequency} class:active={f==filterFrequency && t==filterStep} class:active-secondary={(-f+windowLength)%windowLength==filterFrequency && t==filterStep} data-freq={f} data-step={t} on:mousedown={evtSetFilter} on:mouseenter={evtDragFilter} style:--cmag={cMag(dotProducts[ti][fi])} style:--cphase={cPhase(dotProducts[ti][fi])/Math.PI/2} class:showmag={gridStyle=='mag'} class:showphase={gridStyle=='phase'}></button>
 					{/each}
 					
 					{#if omittedCount}
@@ -492,11 +505,23 @@
 	<th align="right" valign="top">{signalLength}</th>
 	</tr>
 </table>	
-</div>
+
+<div style:justify-content="center" style:padding="0.5em" style:display="flex" style:gap="1em">
+	<label><input type="radio" value="none" bind:group={gridStyle}> Empty</label>
+	<label><input type="radio" value="mag" bind:group={gridStyle}> Magnitude</label>
+	<label><input type="radio" value="phase" bind:group={gridStyle}> Phase</label>
 </div>
 
-<div class="container">
+</div>
+</div>
+<div class="container text-page">
 	<div>
+
+	<h2>Explanation</h2>
+	<p>
+		Above you can a signal a filter. Both are complex values and represented along the time in both cartesian (real and imaginary part are white curve and gray curve) and polar coordinates (square brightness represents the magnitude, color represents the phase)
+	</p>
+
 		<p>
 		You can configure the size and shape of the filter and shift it across the signal. Depending on size of the filter and the shift length the filter can be placed at a number of positions along the signal. At each possible position the dot product between the filter values and the signal values at that position can be calculated as a measure of how well the filter fits the signal or rather how similar the filter shape is to the the signal.
 	</p>
