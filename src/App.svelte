@@ -71,8 +71,8 @@
 	$: dotProducts = allSteps.map((s) => allFrequencies.map((f) => {
 		return filterWindow.map((_,o) => cMul(
 			cMake(
-			filterShape == 'rect' ? 1/Math.sqrt(filterWindow.length) :
-			Math.exp(-Math.pow(((o+0.5)/(windowLength+1)-(0.5))*4, 2)), 
+			filterShape == 'rect' ? 2/Math.sqrt(2*filterWindow.length) :
+			Math.exp(-Math.pow(((o+0.5)/(windowLength+1)-(0.5))*4, 2))*2/Math.sqrt(windowLength), 
 			(f>maxFilterFrequency/2?f-maxFilterFrequency-1:f)*(o)/(windowLength)*2*Math.PI),
 			signal[s*windowShiftSize+o]
 		)).reduce(cSum,cMake())
