@@ -17,11 +17,11 @@
 	let filterShape = 'rect'
 
 	let wantOddLength = false
-	$: canOddLength = true || !(windowLengthExp==0 || windowLengthExp == signalLengthExp)
-	$: oddLength = wantOddLength && canOddLength
 	let windowLengthExp = 3
-	$: windowLengthExp = Math.max(autoFrequency?2:0, Math.min(windowLengthExp, signalLengthExp - (wantOddLength?1:0)))
-	$: windowLength = Math.pow(2, windowLengthExp) + (oddLength?1:0)
+	$: canOddLength = true || !(windowLengthExp==0 || windowLengthExp == signalLengthExp)
+	$: oddLength = (wantOddLength && canOddLength) ^ (windowLengthExp == 0)
+	$: windowLengthExp = Math.max(autoFrequency?1:0, Math.min(windowLengthExp, signalLengthExp - (wantOddLength?1:0)))
+	$: windowLength = Math.min(signalLength, Math.pow(2, windowLengthExp) + (oddLength?1:0))
 
 	let autoShiftSize = false
 	let maxShiftSize = false
@@ -37,7 +37,7 @@
 	let autoFrequency = false
 	let filterFrequency = 0
 	$: maxFilterFrequency = Math.pow(2, windowLengthExp)-1+(oddLength?1:0)
-	$: filterFrequency = autoFrequency ? 2 : Math.min(filterFrequency, maxFilterFrequency)
+	$: filterFrequency = autoFrequency ? 1 : Math.min(filterFrequency, maxFilterFrequency)
 	$: filterWindow = Array(windowLength).fill(null).map(
 		(_,i) => cMake(
 			filterShape == 'rect' ? 1 :
@@ -45,7 +45,7 @@
 			filterFrequency*i/(windowLength)*2*Math.PI))
 
 	$: allSteps = Array(filterStepMax+1).fill(null).map((_,i) => i)
-	$: allFrequencies = Array(maxFilterFrequency+1+(!oddLength?1:0)).fill(null).map((_,i) => i-1 <= maxFilterFrequency/2 ? -i+(maxFilterFrequency+(maxFilterFrequency&1))/2 : 1+maxFilterFrequency-i+(maxFilterFrequency+(maxFilterFrequency&1))/2)
+	$: allFrequencies = Array(maxFilterFrequency+(maxFilterFrequency?1:0)+(!oddLength?1:0)).fill(null).map((_,i) => i-1 <= maxFilterFrequency/2 ? -i+(maxFilterFrequency+(maxFilterFrequency&1))/2 : 1+maxFilterFrequency-i+(maxFilterFrequency+(maxFilterFrequency&1))/2)
 	
 	let dragging = false
 	
@@ -296,6 +296,7 @@
 
 	.tf-grid.even {
 		grid-template-rows: 0.5fr repeat(var(--odd-row-count), 1fr) 0.5fr;
+		aspect-ratio: none;
 	}
 
 	.tf-grid > [data-t="0"] {
