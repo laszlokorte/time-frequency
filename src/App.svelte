@@ -1,8 +1,29 @@
 <script>
-	function cMake(mag, phase) {
+	function cMake(mag=0, phase=0) {
 		return {mag, phase}
 	}
 	
+	function cMul(a,b) {
+		return {mag: a.mag*b.mag, phase: a.phase+b.phase}
+	}
+
+	function cSum(a,b) {
+		const are = Math.cos(a.phase) * a.mag
+		const bre = Math.cos(b.phase) * b.mag
+		const aim = Math.sin(a.phase) * a.mag
+		const bim = Math.sin(b.phase) * b.mag
+		const sumre = are + bre
+		const sumim = aim + bim
+		return {
+			mag: Math.sqrt(sumre*sumre + sumim*sumim),
+			phase: Math.atan2(aim + bim, are + bre)
+		}
+	}
+
+	function cMag(z) {
+		return z.mag
+	}
+
 	var seed = 1;
 	function random() {
 			var x = Math.sin(seed++) * 10000;
@@ -19,8 +40,8 @@
 	let wantOddLength = false
 	let windowLengthExp = 3
 	$: canOddLength = true || !(windowLengthExp==0 || windowLengthExp == signalLengthExp)
-	$: oddLength = (wantOddLength && canOddLength) ^ (windowLengthExp == 0)
-	$: windowLengthExp = Math.max(autoFrequency?1:0, Math.min(windowLengthExp, signalLengthExp - (wantOddLength?1:0)))
+	$: oddLength = (wantOddLength && canOddLength) ^ (windowLengthExp == 0) && windowLengthExp!=signalLengthExp
+	$: windowLengthExp = Math.max(autoFrequency?1:0, Math.min(windowLengthExp, signalLengthExp))
 	$: windowLength = Math.min(signalLength, Math.pow(2, windowLengthExp) + (oddLength?1:0))
 
 	let autoShiftSize = false
@@ -46,6 +67,16 @@
 
 	$: allSteps = Array(filterStepMax+1).fill(null).map((_,i) => i)
 	$: allFrequencies = Array(maxFilterFrequency+(maxFilterFrequency?1:0)+(!oddLength?1:0)).fill(null).map((_,i) => i-1 <= maxFilterFrequency/2 ? -i+(maxFilterFrequency+(maxFilterFrequency&1))/2 : 1+maxFilterFrequency-i+(maxFilterFrequency+(maxFilterFrequency&1))/2)
+
+	$: dotProducts = allSteps.map((s) => allFrequencies.map((f) => {
+		return filterWindow.map((_,o) => cMul(
+			cMake(
+			filterShape == 'rect' ? 1/Math.sqrt(filterWindow.length) :
+			Math.exp(-Math.pow(((o+0.5)/(windowLength+1)-(0.5))*4, 2)), 
+			(f>maxFilterFrequency/2?f-maxFilterFrequency-1:f)*(o)/(windowLength)*2*Math.PI),
+			signal[s*windowShiftSize+o]
+		)).reduce(cSum,cMake())
+	}))
 	
 	let dragging = false
 	
@@ -148,6 +179,7 @@
 		display: block;
 		cursor: pointer;
 		border-radius: 1px;
+		background-color: hsl(0, 50%, calc(var(--cmag) * 50%));
 	}
 	
 	label {
@@ -163,10 +195,12 @@
 	}
 	
 	button.active-secondary {
-		background: #999;
+		outline: 4px dotted orange;
+		z-index: 10;
 	}
 	button.active {
-		background: orange;
+		outline: 4px solid orange;
+		z-index: 10;
 	}
 
 	
@@ -174,6 +208,7 @@
 		opacity: 0.5;
 		cursor: default;
 		pointer-events: none;
+		background: #bbb;
 	}
 	
 	.rottext {
@@ -430,8 +465,8 @@
 						
 			<div class="tf-grid" class:even={!oddLength} style:--odd-row-count={allFrequencies.length - (oddLength?0:2)}>
 				{#each allFrequencies as f, fi}
-					{#each allSteps as t}
-					<button data-t={t} style:grid-column={t+1} on:mouseup|capture={evtDragEnd} disabled={f!=filterFrequency&&(-f+windowLength)%windowLength!=filterFrequency && autoFrequency} class:active={f==filterFrequency && t==filterStep} class:active-secondary={(-f+windowLength)%windowLength==filterFrequency && t==filterStep} data-freq={f} data-step={t} on:mousedown={evtSetFilter} on:mouseenter={evtDragFilter}></button>
+					{#each allSteps as t, ti}
+					<button data-t={t} style:grid-column={t+1} on:mouseup|capture={evtDragEnd} disabled={f!=filterFrequency&&(-f+windowLength)%windowLength!=filterFrequency && autoFrequency} class:active={f==filterFrequency && t==filterStep} class:active-secondary={(-f+windowLength)%windowLength==filterFrequency && t==filterStep} data-freq={f} data-step={t} on:mousedown={evtSetFilter} on:mouseenter={evtDragFilter} style:--cmag={cMag(dotProducts[ti][fi])}></button>
 					{/each}
 					
 					{#if omittedCount}
